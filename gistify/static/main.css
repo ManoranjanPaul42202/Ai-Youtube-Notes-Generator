@@ -1,0 +1,182 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+.nav-bar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    padding: 15px 40px;
+}
+
+.nav-bar ul {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 50px;
+}
+
+ul li {
+    list-style: none;
+    font-size: large;
+    font-weight: 500;
+}
+
+li a {
+    text-decoration: none;
+    color: #1F2937;
+    position: relative;
+    display: inline-block;
+    padding: 5px 0;
+}
+
+li a::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 2px;
+    left: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, #7F56D9, #06B6D4);
+    transition: width 0.3s ease;
+}
+
+li a:hover::after {
+    width: 100%;
+}
+
+.button {
+    background: linear-gradient(90deg, #7F56D9, #06B6D4);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+    font-size: large;
+}
+
+.button:hover {
+    opacity: 0.85;
+}
+
+/* Footer */
+.footer {
+    background: #F9FAFB;
+    padding: 40px 20px;
+    text-align: center;
+    border-top: 1px solid #E5E7EB;
+    margin-top: 60px;
+}
+
+.footer p {
+    color: #6B7280;
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+}
+
+.footer .links {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.footer .links a {
+    text-decoration: none;
+    color: #1F2937;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    position: relative;
+}
+
+.footer .links a::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 2px;
+    left: 0;
+    bottom: -3px;
+    background: linear-gradient(90deg, #7F56D9, #06B6D4);
+    transition: width 0.3s ease;
+}
+
+.footer .links a:hover {
+    color: #7F56D9;
+}
+
+.footer .links a:hover::after {
+    width: 100%;
+}
+
+/* Social Icons (Optional) */
+.footer .social {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.footer .social a {
+    color: #6B7280;
+    font-size: 1.2rem;
+    transition: color 0.3s ease;
+}
+
+.footer .social a:hover {
+    color: #06B6D4;
+}
+
+/* Profile container */
+.profile-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    /* light gray background */
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+/* Profile image */
+.profile-container img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    /* circular */
+    object-fit: cover;
+    border: 3px solid #007bff;
+    /* blue border */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Profile text section */
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Username */
+.profile-details h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #343a40;
+}
+
+/* Email */
+.profile-details p {
+    margin: 5px 0 0;
+    font-size: 1rem;
+    color: #6c757d;
+}

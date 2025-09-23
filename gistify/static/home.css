@@ -1,0 +1,158 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+/* General page style */
+body {
+    background: #fff;
+    color: #1F2937;
+    line-height: 1.6;
+}
+
+/* Hero Section */
+.hero {
+    text-align: center;
+    padding: 100px 20px 60px;
+}
+
+.hero h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #1F2937;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    max-width: 600px;
+    margin: 0 auto 30px;
+    color: #4B5563;
+}
+
+.hero .button {
+    background: linear-gradient(90deg, #7F56D9, #06B6D4);
+    color: #fff;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    text-decoration: none;
+}
+
+.hero .button:hover {
+    transform: translateY(-2px);
+}
+
+/* Features Section */
+.features {
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.features h3 {
+    font-size: 2rem;
+    margin-bottom: 40px;
+    color: #1F2937;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 30px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+}
+
+.card h4 {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+/* How It Works Section */
+.how {
+    padding: 80px 20px;
+    background: #F9FAFB;
+    text-align: center;
+}
+
+.how h3 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+    color: #1F2937;
+}
+
+.steps {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+/* Get Started Section */
+.get-started {
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.get-started h3 {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    color: #1F2937;
+}
+
+.get-started p {
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+    color: #4B5563;
+}
+
+.input-box {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.input-box input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.input-box .button {
+    background: linear-gradient(90deg, #7F56D9, #06B6D4);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.input-box .button:hover {
+    opacity: 0.9;
+}

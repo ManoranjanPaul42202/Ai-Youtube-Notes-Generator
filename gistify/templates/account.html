@@ -1,0 +1,77 @@
+{% extends 'template.html' %}
+{% block content %}
+<div class="profile-container">
+    <img src="{{ user_image }}" alt="profile image">
+    <div class="profile-details">
+        <h2>{{ current_user.username }}</h2>
+        <p>{{ current_user.email }}</p>
+        <p>Preference: {{ current_user.preference }}</p>
+        <p>Tone: {{ current_user.tone }}</p>
+    </div>
+</div>
+<div class="content-section">
+    <form method="POST" action="" novalidate enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Update Account</legend>
+
+            <!-- Username -->
+            <div class="form-group">
+                {{ form.username.label(class="form-control-label") }}
+                {% if form.username.errors %}
+                    {{ form.username(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.username.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.username(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+                {{ form.email.label(class="form-control-label") }}
+                {% if form.email.errors %}
+                    {{ form.email(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.email.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.email(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <!-- Preference -->
+            <div class="form-group">
+                {{ form.preference.label(class="form-control-label") }}
+                {{ form.preference(class="form-control form-control-lg") }}
+            </div>
+
+            <!-- Tone -->
+            <div class="form-group">
+                {{ form.tone.label(class="form-control-label") }}
+                {{ form.tone(class="form-control form-control-lg") }}
+            </div>
+
+            <div class="form-group mb-3">
+                {{ form.picture.label(class="form-label fw-bold") }}
+                {{ form.picture(class="form-control") }}
+                {% if form.picture.errors %}
+                    {% for error in form.picture.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+
+        <!-- Submit -->
+        <div class="form-group">
+            {{ form.submit(class="btn btn-primary btn-block") }}
+        </div>
+    </form>
+</div>
+{% endblock content %}

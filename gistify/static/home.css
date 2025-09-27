@@ -156,3 +156,13 @@ body {
 .input-box .button:hover {
     opacity: 0.9;
 }
+
+.button a {
+    text-decoration: none;
+    color: white;
+}
+
+.custom-input::placeholder {
+    font-size: 1rem;
+    color: #888;
+}

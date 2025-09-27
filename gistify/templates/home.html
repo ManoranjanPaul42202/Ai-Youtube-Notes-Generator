@@ -44,9 +44,60 @@
 <section class="get-started" id="get-started">
     <h3>Get Started with Gistify</h3>
     <p>Try it out for free! Paste any YouTube link below:</p>
-    <div class="input-box">
-        <input type="text" placeholder="Paste YouTube link...">
-        <button class="button">Generate Notes</button>
+    <!-- <form action="{{ url_for('hello') }}" method="post">
+        {{ form.hidden_tag() }}
+        <div class="input-box">
+            {{ form.link(
+            class="form-control form-control-lg" + (" is-invalid" if form.link.errors else ""),
+            placeholder="Paste a valid YouTube video link (e.g. https://youtu.be/abc123)",
+            value=form.link.data if form.link.data else "",
+            autofocus=True
+            ) }}
+    
+            {% if form.link.errors %}
+            <div class="invalid-feedback">
+                {% for error in form.link.errors %}
+                <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if form.link.errors %}
+                {{ form.link(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+                {% for error in form.link.errors %}
+                    <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+            {% else %}
+                {{ form.link(class="form-control form-control-lg") }}
+            {% endif %}
+            {{ form.submit(class="button") }}
+        </div>
+    </form> -->
+    <div class="content-section d-flex justify-content-center align-items-center mt-5 ml-2">
+        <form action="{{ url_for('hello') }}" method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="d-flex align-items-start gap-2">
+                {# Input box #}
+                {% if form.link.errors %}
+                    {{ form.link(class="form-control form-control-lg is-invalid w-75 custom-input",
+                    autofocus="autofocus", title="Paste YouTube link (e.g., https://youtu.be/abc123)") }}
+                {% else %}
+                    {{ form.link(class="form-control form-control-lg w-75 custom-input", 
+                        title="Paste YouTube link (e.g., https://youtu.be/abc123)") }}
+                {% endif %}
+                {# Submit button #}
+                {{ form.submit(class="button") }}
+            </div>
+            {# Error message #}
+            {% if form.link.errors %}
+            <div class="invalid-feedback d-block mt-1">
+                {% for error in form.link.errors %}
+                <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </form>
     </div>
 </section>
 {% endblock content %}

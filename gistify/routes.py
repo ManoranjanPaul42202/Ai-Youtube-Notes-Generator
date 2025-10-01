@@ -30,9 +30,17 @@ def save_picture(form_picture):
 def hello():
     form = LinkForm()
     if form.validate_on_submit():
+        # Base directory (project root)
+        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
         link = form.link.data
+        cookie_file = form.cookies_file.data
+        if cookie_file:
+            save_path = os.path.join(BASE_DIR, 'cookies.txt')
+            cookie_file.save(save_path)
+            print("Saved cookies to", save_path)
         print(link)
-        return redirect(url_for('dashboard', link=link))
+        return redirect(url_for('dashboard', link=link, save_path=save_path))
     return render_template('home.html', data=data, title="Gistify - AI YouTube Notes Generator", 
                            css='home.css', form=form)
 
@@ -68,8 +76,10 @@ def login():
 def dashboard():
     form = LinkForm()
     link = request.args.get('link')
+    cookies_file_path = request.args.get('save_path')
+    print(cookies_file_path)
     print(link)
-    result = generate_transcript(link)
+    result = generate_transcript(link, cookies_path=cookies_file_path)
     return render_template('dashboard.html', title='dashboard', form=form, transcription=result)
 
 @app.route("/logout")

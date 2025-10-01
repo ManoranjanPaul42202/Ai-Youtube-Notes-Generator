@@ -44,60 +44,61 @@
 <section class="get-started" id="get-started">
     <h3>Get Started with Gistify</h3>
     <p>Try it out for free! Paste any YouTube link below:</p>
-    <!-- <form action="{{ url_for('hello') }}" method="post">
-        {{ form.hidden_tag() }}
-        <div class="input-box">
-            {{ form.link(
-            class="form-control form-control-lg" + (" is-invalid" if form.link.errors else ""),
-            placeholder="Paste a valid YouTube video link (e.g. https://youtu.be/abc123)",
-            value=form.link.data if form.link.data else "",
-            autofocus=True
-            ) }}
-    
-            {% if form.link.errors %}
-            <div class="invalid-feedback">
-                {% for error in form.link.errors %}
-                <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-            {% endif %}
-            {% if form.link.errors %}
-                {{ form.link(class="form-control form-control-lg is-invalid") }}
-            <div class="invalid-feedback">
-                {% for error in form.link.errors %}
-                    <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-            {% else %}
-                {{ form.link(class="form-control form-control-lg") }}
-            {% endif %}
-            {{ form.submit(class="button") }}
-        </div>
-    </form> -->
+
     <div class="content-section d-flex justify-content-center align-items-center mt-5 ml-2">
-        <form action="{{ url_for('hello') }}" method="post" novalidate>
+        <form action="{{ url_for('hello') }}" method="post" enctype="multipart/form-data" novalidate>
             {{ form.hidden_tag() }}
-            <div class="d-flex align-items-start gap-2">
-                {# Input box #}
-                {% if form.link.errors %}
+            <div class="d-flex flex-column w-100 gap-3">
+                <!-- Link input -->
+                <div class="d-flex align-items-start gap-2">
+                    {% if form.link.errors %}
                     {{ form.link(class="form-control form-control-lg is-invalid w-75 custom-input",
                     autofocus="autofocus", title="Paste YouTube link (e.g., https://youtu.be/abc123)") }}
-                {% else %}
-                    {{ form.link(class="form-control form-control-lg w-75 custom-input", 
-                        title="Paste YouTube link (e.g., https://youtu.be/abc123)") }}
+                    {% else %}
+                    {{ form.link(class="form-control form-control-lg w-75 custom-input",
+                    title="Paste YouTube link (e.g., https://youtu.be/abc123)") }}
+                    {% endif %}
+                    {{ form.submit(class="button") }}
+                </div>
+                <!-- Link errors -->
+                {% if form.link.errors %}
+                <div class="invalid-feedback d-block mt-1">
+                    {% for error in form.link.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
                 {% endif %}
-                {# Submit button #}
-                {{ form.submit(class="button") }}
+
+                <!-- Cookies.txt upload (optional) with improved info box -->
+                <div class="form-group mt-3 position-relative display-flex">
+                    <div class="file-upload">
+                        <label class="form-label fw-bold mb-1">
+                            Upload cookies.txt (optional)
+                        </label>
+                        {{ form.cookies_file(class="form-control-file") }}
+                    </div>
+                    <!-- Info box -->
+                    <div class="info-box mt-2">
+                        <strong class="info-title">Why upload cookies?</strong>
+                        <ul class="info-list">
+                            <li>Access age-restricted or private videos</li>
+                            <li>Download videos available only when logged in</li>
+                            <li>Avoid YouTube rate limits</li>
+                        </ul>
+                        <small class="info-note">(Without cookies, only fully public videos can be processed)</small>
+                    </div>
+                
+                    {% if form.cookies_file.errors %}
+                    <div class="invalid-feedback d-block mt-1">
+                        {% for error in form.cookies_file.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            {# Error message #}
-            {% if form.link.errors %}
-            <div class="invalid-feedback d-block mt-1">
-                {% for error in form.link.errors %}
-                <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-            {% endif %}
         </form>
     </div>
 </section>
+
 {% endblock content %}

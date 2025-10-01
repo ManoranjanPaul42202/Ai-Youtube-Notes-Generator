@@ -105,21 +105,50 @@ class UpdateAccountForm(FlaskForm):
             if user:
                 raise ValidationError("The provided tone is already being used.")
     
+# class LinkForm(FlaskForm):
+#     link = StringField('Paste Link Here', validators=[DataRequired()],
+#                        render_kw={"placeholder": "Paste YouTube link"})
+#     submit = SubmitField('Generate Notes')
+
+#     def validate_link(self, link):
+#         url = link.data.strip()
+#         if 'list' in url:
+#             raise ValidationError("Playlist links are not allowed. Please provide a single video link.")
+#         # 2️⃣ Check if the link looks like a valid URL
+#         url_pattern = re.compile(
+#             r'^(https?://)?'            # http:// or https://
+#             r'([a-zA-Z0-9_-]+\.)+'      # domain...
+#             r'([a-zA-Z]{2,})'           # top-level domain
+#             r'(/[a-zA-Z0-9&%_\./-~-]*)?$' # path (optional)
+#         )
+#         if not url_pattern.match(url):
+#             raise ValidationError("Please enter a valid URL.")
+
 class LinkForm(FlaskForm):
-    link = StringField('Paste Link Here', validators=[DataRequired()],
-                       render_kw={"placeholder": "Paste YouTube link"})
+    link = StringField(
+        'Paste Link Here',
+        validators=[DataRequired()],
+        render_kw={"placeholder": "Paste YouTube link"}
+    )
+
+    cookies_file = FileField(
+        'Upload cookies.txt (optional)',
+        validators=[FileAllowed(['txt'], 'Only .txt files are allowed')]
+    )
+
     submit = SubmitField('Generate Notes')
 
     def validate_link(self, link):
         url = link.data.strip()
         if 'list' in url:
             raise ValidationError("Playlist links are not allowed. Please provide a single video link.")
-        # 2️⃣ Check if the link looks like a valid URL
+
+        # Check if URL looks valid
         url_pattern = re.compile(
-            r'^(https?://)?'            # http:// or https://
-            r'([a-zA-Z0-9_-]+\.)+'      # domain...
-            r'([a-zA-Z]{2,})'           # top-level domain
-            r'(/[a-zA-Z0-9&%_\./-~-]*)?$' # path (optional)
+            r'^(https?://)?'                # http:// or https://
+            r'([a-zA-Z0-9_-]+\.)+'          # domain...
+            r'([a-zA-Z]{2,})'               # top-level domain
+            r'(/[a-zA-Z0-9&%_\./-~-]*)?$'   # path (optional)
         )
         if not url_pattern.match(url):
             raise ValidationError("Please enter a valid URL.")

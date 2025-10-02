@@ -1,7 +1,7 @@
 import secrets
 import os
 from PIL import Image
-from flask import render_template, url_for, redirect, flash, request
+from flask import render_template, url_for, redirect, flash, request, jsonify, session
 from gistify import app, db, bcrypt
 from gistify.form import RegistrationForm, loginForm, UpdateAccountForm, LinkForm
 from gistify.model import User, Note
@@ -25,24 +25,72 @@ def save_picture(form_picture):
     
     return picture_fn
 
+def get_or_create_note(url, user_id, title="YouTube Note", cookies_path=None):
+    note = Note.query.filter_by(yt_link=url, user_id=user_id).first()
+    if note:
+        return {
+            "transcription": note.content,
+            "segments": eval(note.time_stamps),
+            "language": note.language,
+            "cached": True
+        }
+
+    # Generate new transcription
+    result = generate_transcript(url, cookies_path=cookies_path)
+    if "error" in result:
+        return result
+
+    transcription_text = result.get("transcription", "")
+    segments = result.get("segments", [])
+    language = result.get("language", "unknown")
+
+    new_note = Note(
+        title=title,
+        yt_link=url,
+        language=language,
+        time_stamps=str(segments),
+        content=transcription_text,
+        user_id=user_id
+    )
+    db.session.add(new_note)
+    db.session.commit()
+
+    return {
+        "transcription": transcription_text,
+        "segments": segments,
+        "language": language,
+        "cached": False
+    }
+
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/home", methods=['GET', 'POST'])
 def hello():
     form = LinkForm()
     if form.validate_on_submit():
-        # Base directory (project root)
         BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
         link = form.link.data
+        save_path = None
+
         cookie_file = form.cookies_file.data
         if cookie_file:
             save_path = os.path.join(BASE_DIR, 'cookies.txt')
             cookie_file.save(save_path)
             print("Saved cookies to", save_path)
-        print(link)
-        return redirect(url_for('dashboard', link=link, save_path=save_path))
-    return render_template('home.html', data=data, title="Gistify - AI YouTube Notes Generator", 
-                           css='home.css', form=form)
+
+        # Save to session instead of URL
+        session['cookies_path'] = save_path
+
+        return redirect(url_for('dashboard', link=link))
+
+    return render_template(
+        'home.html',
+        data=data,
+        title="Gistify - AI YouTube Notes Generator",
+        css='home.css',
+        form=form
+    )
+
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
@@ -77,10 +125,50 @@ def dashboard():
     form = LinkForm()
     link = request.args.get('link')
     cookies_file_path = request.args.get('save_path')
-    print(cookies_file_path)
-    print(link)
-    result = generate_transcript(link, cookies_path=cookies_file_path)
-    return render_template('dashboard.html', title='dashboard', form=form, transcription=result)
+
+    # Extract video ID for embedding
+    video_id = None
+    if "watch?v=" in link:
+        video_id = link.split("watch?v=")[-1]
+    elif "youtu.be/" in link:
+        video_id = link.split("youtu.be/")[-1]
+
+    return render_template(
+        'dashboard.html',
+        title='Dashboard',
+        form=form,
+        video_id=video_id,
+        link=link,
+        cookies_file_path=cookies_file_path
+    )
+
+@app.route("/get_transcription", methods=['GET'])
+@login_required
+def get_transcription():
+    link = request.args.get("link")
+    cookies_file_path = session.get('cookies_path')
+
+    if not link:
+        return jsonify({"transcription": "", "segments": [], "error": "No link provided."})
+
+    result = generate_transcript(link, cookies_path=cookies_file_path, return_segments=True)
+
+    if "error" in result:
+        return jsonify(result)
+
+    # Extract clean segments
+    clean_segments = []
+    for seg in result.get("segments", []):
+        clean_segments.append({
+            "start": seg.get("start", 0),
+            "end": seg.get("end", 0),
+            "text": seg.get("text", "")
+        })
+
+    return jsonify({
+        "transcription": result.get("transcription", ""),
+        "segments": clean_segments
+    })
 
 @app.route("/logout")
 def logout():

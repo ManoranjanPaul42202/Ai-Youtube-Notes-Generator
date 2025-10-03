@@ -26,7 +26,7 @@ def save_picture(form_picture):
     return picture_fn
 
 def get_or_create_note(url, user_id, title="YouTube Note", cookies_path=None):
-    note = Note.query.filter_by(yt_link=url, user_id=user_id).first()
+    note = Note.query.filter_by(yt_link=url).first()
     if note:
         return {
             "transcription": note.content,
@@ -150,8 +150,13 @@ def get_transcription():
 
     if not link:
         return jsonify({"transcription": "", "segments": [], "error": "No link provided."})
+    
+    result = get_or_create_note(link, 
+                                current_user.id, 
+                                title="Youtube Note", 
+                                cookies_path=cookies_file_path)    
 
-    result = generate_transcript(link, cookies_path=cookies_file_path, return_segments=True)
+    # result = generate_transcript(link, cookies_path=cookies_file_path, return_segments=True)
 
     if "error" in result:
         return jsonify(result)

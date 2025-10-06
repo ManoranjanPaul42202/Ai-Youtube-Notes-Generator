@@ -152,3 +152,6 @@ class LinkForm(FlaskForm):
         )
         if not url_pattern.match(url):
             raise ValidationError("Please enter a valid URL.")
+        
+class GenerateNotesForm(FlaskForm):
+    submit = SubmitField("Generate Detailed Notes")

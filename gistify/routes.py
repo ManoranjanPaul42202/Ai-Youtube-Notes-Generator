@@ -3,7 +3,7 @@ import os
 from PIL import Image
 from flask import render_template, url_for, redirect, flash, request, jsonify, session
 from gistify import app, db, bcrypt
-from gistify.form import RegistrationForm, loginForm, UpdateAccountForm, LinkForm
+from gistify.form import RegistrationForm, loginForm, UpdateAccountForm, LinkForm, GenerateNotesForm
 from gistify.model import User, Note
 from flask_login import login_user, logout_user, current_user, login_required
 from gistify.audio_transcription import generate_transcript
@@ -123,23 +123,30 @@ def login():
 @login_required
 def dashboard():
     form = LinkForm()
+    notes_form = GenerateNotesForm()
+    if form.validate_on_submit():
+        link = form.link.data
+        return redirect(url_for('dashboard', link=link))
     link = request.args.get('link')
     cookies_file_path = request.args.get('save_path')
 
     # Extract video ID for embedding
     video_id = None
-    if "watch?v=" in link:
-        video_id = link.split("watch?v=")[-1]
-    elif "youtu.be/" in link:
-        video_id = link.split("youtu.be/")[-1]
-
+    if link and link.lower() != "none":
+        if "watch?v=" in link:
+            video_id = link.split("watch?v=")[-1]
+        elif "youtu.be/" in link:
+            video_id = link.split("youtu.be/")[-1]
+    
     return render_template(
         'dashboard.html',
         title='Dashboard',
         form=form,
+        notes_form = notes_form,
         video_id=video_id,
         link=link,
-        cookies_file_path=cookies_file_path
+        cookies_file_path=cookies_file_path,
+        css='dashboard.css'
     )
 
 @app.route("/get_transcription", methods=['GET'])
@@ -148,6 +155,8 @@ def get_transcription():
     link = request.args.get("link")
     cookies_file_path = session.get('cookies_path')
 
+    if link == "None":
+        return jsonify({"transcription": "", "segments": [], "error": "Provide a link to get started"})
     if not link:
         return jsonify({"transcription": "", "segments": [], "error": "No link provided."})
     

@@ -111,13 +111,20 @@
         Use these notes for study, reference, or review.
     </p>
 
-    <form action="" method="post">
+    <form id="generate-notes-form" method="post">
         {{ notes_form.hidden_tag() }}
         <button type="submit" class="btn btn-generate">
             <span class="btn-icon">📝</span> Generate Notes
             <span class="btn-shine"></span>
         </button>
     </form>
+    
+    <!-- Loader and output -->
+    <div id="generate-notes-loader" class="spinner-border text-success ms-2" style="display:none;" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <div id="generated-notes-output" class="mt-3"></div>
+
 </div>
 
 <!-- Scripts -->
@@ -301,6 +308,134 @@
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
     });
+    // // 📝 Generate Notes Handler
+    // function generateNotes() {
+    //     const styleSelect = document.getElementById("notes-style-select");
+    //     const topicInput = document.getElementById("notes-topic-input");
+    //     const outputContainer = document.getElementById("generated-notes-output");
+    //     const loader = document.getElementById("generate-notes-loader");
+
+    //     const style = styleSelect ? styleSelect.value : "detailed";
+    //     const topic = topicInput ? topicInput.value.trim() : "";
+
+    //     // Show loader and clear old content
+    //     loader.style.display = "inline-block";
+    //     outputContainer.innerHTML = "";
+
+    //     const formData = new FormData();
+    //     formData.append("style", style);
+    //     formData.append("topic", topic);
+
+    //     fetch("/generate_notes", {
+    //         method: "POST",
+    //         body: formData
+    //     })
+    //         .then(res => res.json())
+    //         .then(data => {
+    //             loader.style.display = "none";
+    //             if (data.success) {
+    //                 outputContainer.innerHTML = `
+    //         <div class="d-flex justify-content-between align-items-center mb-2">
+    //             <h5 class="fw-bold mb-0 text-capitalize">${data.style} Notes</h5>
+    //             <div>
+    //                 <button class="btn btn-sm btn-outline-primary me-2" id="download-notes-btn">Download</button>
+    //                 <button class="btn btn-sm btn-outline-secondary" id="copy-notes-btn">Copy</button>
+    //             </div>
+    //         </div>
+    //         <pre class="p-3 bg-light rounded border" style="white-space: pre-wrap; font-size: 0.95rem;">${data.notes}</pre>
+    //     `;
+
+    //                 // Download Notes as .txt
+    //                 document.getElementById("download-notes-btn").onclick = () => {
+    //                     downloadFile(`notes_${data.style}.txt`, data.notes);
+    //                 };
+
+    //                 // Copy Notes to Clipboard
+    //                 document.getElementById("copy-notes-btn").onclick = () => {
+    //                     copyToClipboard(data.notes);
+    //                 };
+
+    //             } else {
+    //                 outputContainer.innerHTML = `<p class="text-danger">${data.error || "Failed to generate notes."}</p>`;
+    //             }
+    //         })
+    //         .catch(err => {
+    //             loader.style.display = "none";
+    //             outputContainer.innerHTML = `<p class="text-danger">⚠️ Error generating notes.</p>`;
+    //             console.error(err);
+    //         });
+    // }
+
+    // // Attach Generate Notes button event listener after DOM loads
+    // document.addEventListener('DOMContentLoaded', () => {
+    //     const generateNotesBtn = document.getElementById("generate-notes-btn");
+    //     if (generateNotesBtn) {
+    //         generateNotesBtn.addEventListener("click", (e) => {
+    //             e.preventDefault();
+    //             generateNotes();
+    //         });
+    //     }
+    // });
+    document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('generate-notes-form');
+            const loader = document.getElementById('generate-notes-loader');
+            const outputContainer = document.getElementById('generated-notes-output');
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();  // Prevent page reload
+
+                // Show spinner
+                loader.style.display = 'inline-block';
+                outputContainer.innerHTML = ''; // Clear previous output
+
+                const formData = new FormData(form);
+
+                fetch("{{ url_for('generate_notes') }}", {
+                    method: "POST",
+                    body: formData
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        loader.style.display = 'none'; // Hide spinner
+
+                        if (data.success) {
+                            outputContainer.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="fw-bold mb-0 text-capitalize">${data.style} Notes</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-2" id="download-notes-btn">Download</button>
+                            <button class="btn btn-sm btn-outline-secondary" id="copy-notes-btn">Copy</button>
+                        </div>
+                    </div>
+                    <pre class="p-3 bg-light rounded border" style="white-space: pre-wrap; font-size: 0.95rem;">${data.notes}</pre>
+                `;
+
+                            // Download notes
+                            document.getElementById("download-notes-btn").onclick = () => {
+                                const blob = new Blob([data.notes], { type: "text/plain;charset=utf-8" });
+                                const link = document.createElement("a");
+                                link.href = URL.createObjectURL(blob);
+                                link.download = `notes_${data.style}.txt`;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            };
+
+                            // Copy notes
+                            document.getElementById("copy-notes-btn").onclick = () => {
+                                navigator.clipboard.writeText(data.notes).then(() => alert("Copied to clipboard!"));
+                            };
+                        } else {
+                            outputContainer.innerHTML = `<p class="text-danger">${data.error || "Failed to generate notes."}</p>`;
+                        }
+                    })
+                    .catch(err => {
+                        loader.style.display = 'none';
+                        outputContainer.innerHTML = `<p class="text-danger">⚠️ Error generating notes.</p>`;
+                        console.error(err);
+                    });
+            });
+        });
 </script>
 
 

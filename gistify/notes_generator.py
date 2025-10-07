@@ -78,30 +78,74 @@ class NotesGenerator:
         print(f"Retrieving top {k} relevant chunks for topic: {topic}")
         return self.index.similarity_search(topic, k=k)
 
-    def generate_notes(self, style="detailed", topic=""):
-        """Generate notes from transcript based on selected style (bullet, summary, detailed)."""
+    # def generate_notes(self, style="detailed", topic=""):
+    #     """Generate notes from transcript based on selected style (bullet, summary, detailed)."""
+    #     if style not in self.user_prompts:
+    #         raise ValueError(f"Invalid style '{style}'. Must be one of {list(self.user_prompts.keys())}")
+
+    #     # Step 1: Retrieve relevant chunks
+    #     relevant_docs = self.get_relevant_chunks(topic=topic, k=6)
+    #     context_text = "\n\n".join([doc.page_content for doc in relevant_docs])
+
+    #     # Step 2: Build chat messages
+    #     messages = [
+    #         SystemMessage(content=self.system_prompt),
+    #         HumanMessage(content=self.user_prompts[style].format(context=context_text))
+    #     ]
+
+    #     # Step 3: Generate notes using LLM
+    #     print(f"Generating {style} notes...")
+    #     result = self.llm.invoke(messages)
+    #     notes_text = result.content.strip()
+
+    #     # Optional: Save notes to file
+    #     filename = f"notes_{style}.txt"
+    #     with open(filename, "w", encoding="utf-8") as f:
+    #         f.write(notes_text)
+
+    #     print(f"{style.capitalize()} notes generated and saved as {filename}.")
+    #     return notes_text
+
+    def generate_notes(self, transcript_text: str, style="detailed", topic=""):
+        """
+        Generate notes from a given transcript text passed directly from the dashboard.
+        Style can be one of: 'bullet', 'summary', or 'detailed'.
+        Optionally, a topic can be provided to focus on specific sections.
+        """
         if style not in self.user_prompts:
             raise ValueError(f"Invalid style '{style}'. Must be one of {list(self.user_prompts.keys())}")
 
-        # Step 1: Retrieve relevant chunks
-        relevant_docs = self.get_relevant_chunks(topic=topic, k=6)
+        # Step 1: Split transcript into chunks (temporary, not stored globally)
+        splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=50)
+        chunks = splitter.create_documents([transcript_text])
+
+        # Step 2: Create temporary FAISS index from these chunks
+        index = FAISS.from_documents(documents=chunks, embedding=self.embeddings)
+
+        # Step 3: Retrieve relevant chunks (or all if no topic)
+        if topic.strip():
+            relevant_docs = index.similarity_search(topic, k=6)
+        else:
+            relevant_docs = chunks
+
         context_text = "\n\n".join([doc.page_content for doc in relevant_docs])
 
-        # Step 2: Build chat messages
+        # Step 4: Build messages for the LLM
         messages = [
             SystemMessage(content=self.system_prompt),
             HumanMessage(content=self.user_prompts[style].format(context=context_text))
         ]
 
-        # Step 3: Generate notes using LLM
-        print(f"Generating {style} notes...")
+        # Step 5: Generate notes using LLM
+        print(f"Generating {style} notes from provided transcript...")
         result = self.llm.invoke(messages)
         notes_text = result.content.strip()
 
-        # Optional: Save notes to file
+        # Step 6: Save notes to file (optional)
         filename = f"notes_{style}.txt"
         with open(filename, "w", encoding="utf-8") as f:
             f.write(notes_text)
 
         print(f"{style.capitalize()} notes generated and saved as {filename}.")
         return notes_text
+

@@ -94,16 +94,16 @@ class UpdateAccountForm(FlaskForm):
             user = User.query.filter_by(email=email.data).first()
             if user:
                 raise ValidationError("Email Already exists, try something else")
-    def validate_preference(Self, preference):
-        if current_user.preference != preference.data:
-            user = User.query.filter_by(preference=preference.data).first()
-            if user:
-                raise ValidationError("The provided preference is already being used.")
-    def validate_tone(Self, tone):
-        if current_user.tone != tone.data:
-            user = User.query.filter_by(tone=tone.data).first()
-            if user:
-                raise ValidationError("The provided tone is already being used.")
+    # def validate_preference(Self, preference):
+    #     if current_user.preference != preference.data:
+    #         user = User.query.filter_by(preference=preference.data).first()
+    #         if user:
+    #             raise ValidationError("The provided preference is already being used.")
+    # def validate_tone(Self, tone):
+    #     if current_user.tone != tone.data:
+    #         user = User.query.filter_by(tone=tone.data).first()
+    #         if user:
+    #             raise ValidationError("The provided tone is already being used.")
     
 # class LinkForm(FlaskForm):
 #     link = StringField('Paste Link Here', validators=[DataRequired()],

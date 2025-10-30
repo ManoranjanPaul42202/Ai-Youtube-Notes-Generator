@@ -202,8 +202,8 @@ def generate_notes():
         notes_generator = NotesGenerator()
         notes_text = notes_generator.generate_notes(
             transcript_text=transcript_text,
-            style=style,
-            topic=topic
+            style=style
+            # topic=topic
         )
 
         # Store the generated notes in session for future download/export

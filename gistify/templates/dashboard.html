@@ -128,6 +128,10 @@
 </div>
 
 <!-- Scripts -->
+<!-- Add this in your HTML <head> or before the closing </body> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
 <script>
     function formatTime(seconds) {
         const minutes = Math.floor(seconds / 60);
@@ -376,6 +380,66 @@
     //         });
     //     }
     // });
+    // document.addEventListener('DOMContentLoaded', () => {
+    //         const form = document.getElementById('generate-notes-form');
+    //         const loader = document.getElementById('generate-notes-loader');
+    //         const outputContainer = document.getElementById('generated-notes-output');
+
+    //         form.addEventListener('submit', (e) => {
+    //             e.preventDefault();  // Prevent page reload
+
+    //             // Show spinner
+    //             loader.style.display = 'inline-block';
+    //             outputContainer.innerHTML = ''; // Clear previous output
+
+    //             const formData = new FormData(form);
+
+    //             fetch("{{ url_for('generate_notes') }}", {
+    //                 method: "POST",
+    //                 body: formData
+    //             })
+    //                 .then(res => res.json())
+    //                 .then(data => {
+    //                     loader.style.display = 'none'; // Hide spinner
+
+    //                     if (data.success) {
+    //                         outputContainer.innerHTML = `
+    //                 <div class="d-flex justify-content-between align-items-center mb-2">
+    //                     <h5 class="fw-bold mb-0 text-capitalize">${data.style} Notes</h5>
+    //                     <div>
+    //                         <button class="btn btn-sm btn-outline-primary me-2" id="download-notes-btn">Download</button>
+    //                         <button class="btn btn-sm btn-outline-secondary" id="copy-notes-btn">Copy</button>
+    //                     </div>
+    //                 </div>
+    //                 <pre class="p-3 bg-light rounded border" style="white-space: pre-wrap; font-size: 0.95rem;">${data.notes}</pre>
+    //             `;
+
+    //                         // Download notes
+    //                         document.getElementById("download-notes-btn").onclick = () => {
+    //                             const blob = new Blob([data.notes], { type: "text/plain;charset=utf-8" });
+    //                             const link = document.createElement("a");
+    //                             link.href = URL.createObjectURL(blob);
+    //                             link.download = `notes_${data.style}.txt`;
+    //                             document.body.appendChild(link);
+    //                             link.click();
+    //                             document.body.removeChild(link);
+    //                         };
+
+    //                         // Copy notes
+    //                         document.getElementById("copy-notes-btn").onclick = () => {
+    //                             navigator.clipboard.writeText(data.notes).then(() => alert("Copied to clipboard!"));
+    //                         };
+    //                     } else {
+    //                         outputContainer.innerHTML = `<p class="text-danger">${data.error || "Failed to generate notes."}</p>`;
+    //                     }
+    //                 })
+    //                 .catch(err => {
+    //                     loader.style.display = 'none';
+    //                     outputContainer.innerHTML = `<p class="text-danger">⚠️ Error generating notes.</p>`;
+    //                     console.error(err);
+    //                 });
+    //         });
+    //     });
     document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('generate-notes-form');
             const loader = document.getElementById('generate-notes-loader');
@@ -384,9 +448,8 @@
             form.addEventListener('submit', (e) => {
                 e.preventDefault();  // Prevent page reload
 
-                // Show spinner
                 loader.style.display = 'inline-block';
-                outputContainer.innerHTML = ''; // Clear previous output
+                outputContainer.innerHTML = '';
 
                 const formData = new FormData(form);
 
@@ -396,21 +459,22 @@
                 })
                     .then(res => res.json())
                     .then(data => {
-                        loader.style.display = 'none'; // Hide spinner
+                        loader.style.display = 'none';
 
                         if (data.success) {
                             outputContainer.innerHTML = `
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h5 class="fw-bold mb-0 text-capitalize">${data.style} Notes</h5>
                         <div>
-                            <button class="btn btn-sm btn-outline-primary me-2" id="download-notes-btn">Download</button>
+                            <button class="btn btn-sm btn-outline-primary me-2" id="download-notes-btn">Download TXT</button>
+                            <button class="btn btn-sm btn-outline-success me-2" id="download-pdf-btn">Download PDF</button>
                             <button class="btn btn-sm btn-outline-secondary" id="copy-notes-btn">Copy</button>
                         </div>
                     </div>
                     <pre class="p-3 bg-light rounded border" style="white-space: pre-wrap; font-size: 0.95rem;">${data.notes}</pre>
                 `;
 
-                            // Download notes
+                            // Download as TXT
                             document.getElementById("download-notes-btn").onclick = () => {
                                 const blob = new Blob([data.notes], { type: "text/plain;charset=utf-8" });
                                 const link = document.createElement("a");
@@ -421,10 +485,84 @@
                                 document.body.removeChild(link);
                             };
 
-                            // Copy notes
+                            // Download as PDF with styling
+                            document.getElementById("download-pdf-btn").onclick = () => {
+                                const { jsPDF } = window.jspdf;
+                                const pdf = new jsPDF({
+                                    orientation: 'p',
+                                    unit: 'pt',
+                                    format: 'a4'
+                                });
+
+                                const margin = 40;
+                                let cursorY = margin;
+
+                                // Title
+                                pdf.setFont('helvetica', 'bold');
+                                pdf.setFontSize(18);
+                                pdf.text(`${data.style.charAt(0).toUpperCase() + data.style.slice(1)} Notes`, margin, cursorY);
+                                cursorY += 30;
+
+                                // Clean up text: remove ** markers
+                                let cleanText = data.notes.replace(/\*\*/g, '');
+
+                                // Split content into lines
+                                const lines = cleanText.split('\n');
+
+                                pdf.setFontSize(12);
+                                pdf.setFont('helvetica', 'normal');
+
+                                const lineHeight = 16;
+                                const maxWidth = 515;
+
+                                lines.forEach(line => {
+                                    // Detect code blocks ``` 
+                                    if (line.trim().startsWith('```')) {
+                                        pdf.setFont('courier', 'normal');
+                                        pdf.setFillColor(245, 245, 245); // light gray bg for code
+                                        pdf.rect(margin - 5, cursorY - 12, maxWidth + 10, lineHeight, 'F');
+                                        cursorY += lineHeight;
+                                    }
+                                    else if (line.trim() !== '' && line.trim().startsWith('    ')) {
+                                        // Indented code lines
+                                        const codeLine = line.trim();
+                                        const wrapped = pdf.splitTextToSize(codeLine, maxWidth);
+                                        wrapped.forEach(w => {
+                                            pdf.setFont('courier', 'normal');
+                                            pdf.setFillColor(245, 245, 245);
+                                            const boxHeight = (wrapped.length * lineHeight);
+                                            pdf.rect(margin - 5, cursorY - 12, maxWidth + 10, boxHeight, 'F');
+                                            pdf.text(w, margin, cursorY);
+                                            cursorY += lineHeight;
+                                            if (cursorY > pdf.internal.pageSize.height - margin) {
+                                                pdf.addPage();
+                                                cursorY = margin;
+                                            }
+                                        });
+                                    }
+                                    else {
+                                        // Normal text
+                                        const wrappedText = pdf.splitTextToSize(line, maxWidth);
+                                        wrappedText.forEach(t => {
+                                            pdf.setFont('helvetica', 'normal');
+                                            pdf.text(t, margin, cursorY);
+                                            cursorY += lineHeight;
+                                            if (cursorY > pdf.internal.pageSize.height - margin) {
+                                                pdf.addPage();
+                                                cursorY = margin;
+                                            }
+                                        });
+                                    }
+                                });
+
+                                pdf.save(`notes_${data.style}.pdf`);
+                            };
+
+                            // Copy to clipboard
                             document.getElementById("copy-notes-btn").onclick = () => {
                                 navigator.clipboard.writeText(data.notes).then(() => alert("Copied to clipboard!"));
                             };
+
                         } else {
                             outputContainer.innerHTML = `<p class="text-danger">${data.error || "Failed to generate notes."}</p>`;
                         }

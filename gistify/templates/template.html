@@ -21,8 +21,8 @@
                 <div class="logo"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" width="150px"></div>
                 <li><a href="{{ url_for('hello') }}">Home</a></li>
                 <li><a href="{{ url_for('dashboard') }}">Generate Notes</a></li>
-                <li><a href="/">Saved Notes</a></li>
-                <li><a href="/">About</a></li>
+                <li><a href="{{ url_for('saved_notes') }}">Saved Notes</a></li>
+                <li><a href="{{ url_for('about') }}">About</a></li>
                 {% if current_user.is_authenticated %}
                     <li><a href="{{ url_for('account') }}">Account</a></li>
                     <li><a href="{{ url_for('logout') }}" class="button">Logout</a></li>
@@ -48,10 +48,10 @@
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-links">
-                <a href="#">About</a>
-                <a href="#">Contact</a>
-                <a href="#">Privacy Policy</a>
-                <a href="#">Terms</a>
+                <a href="{{ url_for('about') }}">About</a>
+                <a href="{{ url_for('contact') }}">Contact</a>
+                <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+                <a href="{{ url_for('terms') }}">Terms</a>
             </div>
             <p>© 2025 <span class="brand">Gistify</span>. All rights reserved.</p>
         </div>

@@ -133,6 +133,23 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
 
 <script>
+    // Ensure jsPDF is loaded before using it
+    function ensureJsPDFLoaded() {
+        return new Promise((resolve, reject) => {
+            if (window.jspdf && window.jspdf.jsPDF) {
+                return resolve(window.jspdf.jsPDF);
+            }
+            const script = document.createElement('script');
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+            script.onload = () => {
+                if (window.jspdf && window.jspdf.jsPDF) resolve(window.jspdf.jsPDF);
+                else reject(new Error('jsPDF failed to load'));
+            };
+            script.onerror = () => reject(new Error('Failed to load jsPDF'));
+            document.body.appendChild(script);
+        });
+    }
+
     function formatTime(seconds) {
         const minutes = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
@@ -451,127 +468,112 @@
                 loader.style.display = 'inline-block';
                 outputContainer.innerHTML = '';
 
-                const formData = new FormData(form);
-
-                fetch("{{ url_for('generate_notes') }}", {
-                    method: "POST",
-                    body: formData
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        loader.style.display = 'none';
-
-                        if (data.success) {
-                            outputContainer.innerHTML = `
+                // Initialize streaming UI
+                outputContainer.innerHTML = `
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="fw-bold mb-0 text-capitalize">${data.style} Notes</h5>
+                        <h5 class="fw-bold mb-0 text-capitalize">{{ current_user.preference or 'detailed' }} Notes</h5>
                         <div>
-                            <button class="btn btn-sm btn-outline-primary me-2" id="download-notes-btn">Download TXT</button>
-                            <button class="btn btn-sm btn-outline-success me-2" id="download-pdf-btn">Download PDF</button>
-                            <button class="btn btn-sm btn-outline-secondary" id="copy-notes-btn">Copy</button>
+                            <button class="btn btn-sm btn-outline-primary me-2" id="download-notes-btn" disabled>Download TXT</button>
+                            <button class="btn btn-sm btn-outline-success me-2" id="download-pdf-btn" disabled>Download PDF</button>
+                            <button class="btn btn-sm btn-outline-secondary" id="copy-notes-btn" disabled>Copy</button>
                         </div>
                     </div>
-                    <pre class="p-3 bg-light rounded border" style="white-space: pre-wrap; font-size: 0.95rem;">${data.notes}</pre>
+                    <pre id="notes-pre" class="p-3 bg-light rounded border" style="white-space: pre-wrap; font-size: 0.95rem;"></pre>
                 `;
 
-                            // Download as TXT
-                            document.getElementById("download-notes-btn").onclick = () => {
-                                const blob = new Blob([data.notes], { type: "text/plain;charset=utf-8" });
-                                const link = document.createElement("a");
+                const pre = document.getElementById('notes-pre');
+                let fullNotes = '';
+
+                function sanitizeNotes(text) {
+                    if (!text) return '';
+                    // Remove markdown bold **
+                    let t = text.replace(/\*\*/g, '');
+                    // Remove lines like "### Chunk 1 Notes ###" or "## Chunk 2 Notes"
+                    t = t.replace(/^\s*#{1,6}\s*Chunk\s+\d+\s+Notes.*$/gmi, '');
+                    // Trim excessive blank lines
+                    t = t.replace(/\n{3,}/g, '\n\n');
+                    return t.trimStart();
+                }
+                const es = new EventSource("{{ url_for('generate_notes_stream') }}");
+
+                es.onmessage = (evt) => {
+                    try {
+                        const data = JSON.parse(evt.data);
+                        if (data.type === 'chunk') {
+                            fullNotes += sanitizeNotes(data.notes) + '\n\n';
+                            pre.textContent = fullNotes; // append live
+                        } else if (data.type === 'done') {
+                            es.close();
+                            loader.style.display = 'none';
+                            // Enable actions now that content is ready
+                            document.getElementById('download-notes-btn').disabled = false;
+                            document.getElementById('download-pdf-btn').disabled = false;
+                            document.getElementById('copy-notes-btn').disabled = false;
+
+                            // Hook up actions using fullNotes
+                            document.getElementById('download-notes-btn').onclick = () => {
+                                const blob = new Blob([fullNotes], { type: 'text/plain;charset=utf-8' });
+                                const link = document.createElement('a');
                                 link.href = URL.createObjectURL(blob);
-                                link.download = `notes_${data.style}.txt`;
+                                link.download = `notes_{{ current_user.preference or 'detailed' }}.txt`;
                                 document.body.appendChild(link);
                                 link.click();
                                 document.body.removeChild(link);
                             };
 
-                            // Download as PDF with styling
-                            document.getElementById("download-pdf-btn").onclick = () => {
-                                const { jsPDF } = window.jspdf;
-                                const pdf = new jsPDF({
-                                    orientation: 'p',
-                                    unit: 'pt',
-                                    format: 'a4'
-                                });
+                            document.getElementById('copy-notes-btn').onclick = () => {
+                                navigator.clipboard.writeText(fullNotes).then(() => alert('Copied to clipboard!'));
+                            };
 
-                                const margin = 40;
-                                let cursorY = margin;
+                            document.getElementById('download-pdf-btn').onclick = async () => {
+                                try {
+                                    const jsPDF = await ensureJsPDFLoaded();
+                                    const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
 
-                                // Title
-                                pdf.setFont('helvetica', 'bold');
-                                pdf.setFontSize(18);
-                                pdf.text(`${data.style.charAt(0).toUpperCase() + data.style.slice(1)} Notes`, margin, cursorY);
-                                cursorY += 30;
+                                    const margin = 40;
+                                    const maxWidth = 515;
+                                    const lineHeight = 16;
+                                    let cursorY = margin;
 
-                                // Clean up text: remove ** markers
-                                let cleanText = data.notes.replace(/\*\*/g, '');
+                                    // Title
+                                    const title = `{{ (current_user.preference or 'detailed')|capitalize }} Notes`;
+                                    pdf.setFont('helvetica', 'bold');
+                                    pdf.setFontSize(18);
+                                    pdf.text(title, margin, cursorY);
+                                    cursorY += 30;
 
-                                // Split content into lines
-                                const lines = cleanText.split('\n');
+                                    // Body
+                                    let cleanText = (fullNotes || '').replace(/\r/g, '').replace(/\*\*/g, '');
+                                    const wrapped = pdf.splitTextToSize(cleanText, maxWidth);
 
-                                pdf.setFontSize(12);
-                                pdf.setFont('helvetica', 'normal');
+                                    pdf.setFontSize(12);
+                                    pdf.setFont('helvetica', 'normal');
 
-                                const lineHeight = 16;
-                                const maxWidth = 515;
-
-                                lines.forEach(line => {
-                                    // Detect code blocks ``` 
-                                    if (line.trim().startsWith('```')) {
-                                        pdf.setFont('courier', 'normal');
-                                        pdf.setFillColor(245, 245, 245); // light gray bg for code
-                                        pdf.rect(margin - 5, cursorY - 12, maxWidth + 10, lineHeight, 'F');
+                                    const pageHeight = pdf.internal.pageSize.height;
+                                    wrapped.forEach(line => {
+                                        pdf.text(line, margin, cursorY);
                                         cursorY += lineHeight;
-                                    }
-                                    else if (line.trim() !== '' && line.trim().startsWith('    ')) {
-                                        // Indented code lines
-                                        const codeLine = line.trim();
-                                        const wrapped = pdf.splitTextToSize(codeLine, maxWidth);
-                                        wrapped.forEach(w => {
-                                            pdf.setFont('courier', 'normal');
-                                            pdf.setFillColor(245, 245, 245);
-                                            const boxHeight = (wrapped.length * lineHeight);
-                                            pdf.rect(margin - 5, cursorY - 12, maxWidth + 10, boxHeight, 'F');
-                                            pdf.text(w, margin, cursorY);
-                                            cursorY += lineHeight;
-                                            if (cursorY > pdf.internal.pageSize.height - margin) {
-                                                pdf.addPage();
-                                                cursorY = margin;
-                                            }
-                                        });
-                                    }
-                                    else {
-                                        // Normal text
-                                        const wrappedText = pdf.splitTextToSize(line, maxWidth);
-                                        wrappedText.forEach(t => {
-                                            pdf.setFont('helvetica', 'normal');
-                                            pdf.text(t, margin, cursorY);
-                                            cursorY += lineHeight;
-                                            if (cursorY > pdf.internal.pageSize.height - margin) {
-                                                pdf.addPage();
-                                                cursorY = margin;
-                                            }
-                                        });
-                                    }
-                                });
+                                        if (cursorY > pageHeight - margin) {
+                                            pdf.addPage();
+                                            cursorY = margin;
+                                        }
+                                    });
 
-                                pdf.save(`notes_${data.style}.pdf`);
+                                    pdf.save(`notes_{{ (current_user.preference or 'detailed') }}.pdf`);
+                                } catch (e) {
+                                    alert('Failed to generate PDF. See console for details.');
+                                    console.error('PDF generation error:', e);
+                                }
                             };
-
-                            // Copy to clipboard
-                            document.getElementById("copy-notes-btn").onclick = () => {
-                                navigator.clipboard.writeText(data.notes).then(() => alert("Copied to clipboard!"));
-                            };
-
-                        } else {
-                            outputContainer.innerHTML = `<p class="text-danger">${data.error || "Failed to generate notes."}</p>`;
+                        } else if (data.type === 'error') {
+                            es.close();
+                            loader.style.display = 'none';
+                            outputContainer.innerHTML = `<p class="text-danger">${data.message || 'Failed to generate notes.'}</p>`;
                         }
-                    })
-                    .catch(err => {
-                        loader.style.display = 'none';
-                        outputContainer.innerHTML = `<p class="text-danger">⚠️ Error generating notes.</p>`;
-                        console.error(err);
-                    });
+                    } catch (e) {
+                        console.error('Stream parse error', e);
+                    }
+                };
             });
         });
 </script>

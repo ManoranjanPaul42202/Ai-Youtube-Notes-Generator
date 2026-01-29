@@ -1,0 +1,128 @@
+{% extends "template.html" %}
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="display-4 mb-4 text-center">Contact Us</h1>
+            <p class="lead text-center mb-5">
+                Have a question, suggestion, or need support? We'd love to hear from you!
+            </p>
+
+            <div class="row mb-5">
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 text-center">
+                        <div class="card-body">
+                            <div class="mb-3" style="font-size: 3rem;">📧</div>
+                            <h5 class="card-title">Email Us</h5>
+                            <p class="card-text">
+                                <a href="mailto:support@gistify.com">support@gistify.com</a>
+                            </p>
+                            <small class="text-muted">We typically respond within 24 hours</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 text-center">
+                        <div class="card-body">
+                            <div class="mb-3" style="font-size: 3rem;">💬</div>
+                            <h5 class="card-title">Report an Issue</h5>
+                            <p class="card-text">
+                                Found a bug or have a feature request? Let us know!
+                            </p>
+                            <small class="text-muted">Your feedback helps us improve</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 text-center">
+                        <div class="card-body">
+                            <div class="mb-3" style="font-size: 3rem;">🚀</div>
+                            <h5 class="card-title">Get Help</h5>
+                            <p class="card-text">
+                                Need assistance using Gistify? We're here to help!
+                            </p>
+                            <small class="text-muted">Check our FAQ or contact support</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body p-5">
+                    <h3 class="mb-4">Send us a Message</h3>
+                    <form>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Your Name</label>
+                            <input type="text" class="form-control" id="name" placeholder="Enter your name">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Your Email</label>
+                            <input type="email" class="form-control" id="email" placeholder="Enter your email">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Subject</label>
+                            <select class="form-select" id="subject">
+                                <option selected>General Inquiry</option>
+                                <option>Technical Support</option>
+                                <option>Feature Request</option>
+                                <option>Bug Report</option>
+                                <option>Feedback</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message</label>
+                            <textarea class="form-control" id="message" rows="5" placeholder="Enter your message here..."></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="button btn-lg">Send Message</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-4">
+                <h5 class="alert-heading">📌 Note</h5>
+                <p class="mb-0">
+                    For immediate assistance, please check our <a href="{{ url_for('hello') }}">homepage</a> 
+                    for documentation and frequently asked questions. For account-related issues, 
+                    you can manage your account through the <a href="{{ url_for('account') }}">Account</a> page.
+                </p>
+            </div>
+
+            <div class="text-center mt-5">
+                <a href="{{ url_for('hello') }}" class="button">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+    }
+    .lead {
+        font-size: 1.25rem;
+        font-weight: 300;
+    }
+    .form-control, .form-select {
+        border-radius: 8px;
+        padding: 12px;
+    }
+    .alert {
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+

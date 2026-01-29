@@ -89,7 +89,8 @@ li a:hover::after {
     flex-wrap: wrap;
 }
 
-.footer .links a {
+.footer .links a,
+.footer-links a {
     text-decoration: none;
     color: #1F2937;
     font-weight: 500;
@@ -97,7 +98,8 @@ li a:hover::after {
     position: relative;
 }
 
-.footer .links a::after {
+.footer .links a::after,
+.footer-links a::after {
     content: "";
     position: absolute;
     width: 0;
@@ -108,12 +110,22 @@ li a:hover::after {
     transition: width 0.3s ease;
 }
 
-.footer .links a:hover {
+.footer .links a:hover,
+.footer-links a:hover {
     color: #7F56D9;
 }
 
-.footer .links a:hover::after {
+.footer .links a:hover::after,
+.footer-links a:hover::after {
     width: 100%;
+}
+
+.footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
 /* Social Icons (Optional) */

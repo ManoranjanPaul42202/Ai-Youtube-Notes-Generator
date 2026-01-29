@@ -1,0 +1,65 @@
+{% extends 'template.html' %}
+{% block content %}
+
+<div class="container mt-5">
+    <h2 class="mb-4">Your Saved Transcriptions</h2>
+
+    {% if notes and notes|length > 0 %}
+    <div class="accordion" id="notesAccordion">
+        {% for note in notes %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-{{ note.id }}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ note.id }}" aria-expanded="false" aria-controls="collapse-{{ note.id }}">
+                    <div class="d-flex flex-column w-100">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-truncate" style="max-width: 60%">{{ note.title }}</span>
+                            <span class="badge bg-secondary">{{ note.language|upper }}</span>
+                        </div>
+                        <small class="text-muted text-truncate">{{ note.yt_link }}</small>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse-{{ note.id }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ note.id }}" data-bs-parent="#notesAccordion">
+                <div class="accordion-body">
+                    <div class="mb-3 d-flex gap-2 flex-wrap">
+                        <a class="btn btn-sm btn-outline-primary" href="{{ note.yt_link }}" target="_blank">Open Video</a>
+                        <a class="btn btn-sm btn-primary" href="{{ url_for('dashboard', link=note.yt_link) }}">Open in Generator</a>
+                        <button class="btn btn-sm btn-outline-success" onclick="copyContent({{ note.id }})">Copy</button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="downloadTxt({{ note.id }})">Download TXT</button>
+                    </div>
+                    <pre id="content-{{ note.id }}" class="p-3 bg-light rounded border" style="white-space: pre-wrap; font-size: 0.95rem; max-height: 400px; overflow:auto;">{{ note.content }}</pre>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        <div class="alert alert-info">No saved transcriptions yet. Generate one from the Generate Notes page.</div>
+    {% endif %}
+</div>
+
+<script>
+function copyContent(id) {
+    const el = document.getElementById(`content-${id}`);
+    if (!el) return;
+    const text = el.innerText || el.textContent;
+    navigator.clipboard.writeText(text);
+}
+
+function downloadTxt(id) {
+    const el = document.getElementById(`content-${id}`);
+    if (!el) return;
+    const text = el.innerText || el.textContent;
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `transcription_${id}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+</script>
+
+{% endblock %}
+
+

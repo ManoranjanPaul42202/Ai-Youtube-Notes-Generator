@@ -1,0 +1,92 @@
+{% extends "template.html" %}
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="display-4 mb-4 text-center">About Gistify</h1>
+            
+            <section class="mb-5">
+                <h2 class="h3 mb-3">📚 Our Mission</h2>
+                <p class="lead">
+                    Gistify transforms how you learn from YouTube videos. We believe that knowledge 
+                    should be accessible and digestible, helping students, professionals, and lifelong 
+                    learners save time and retain more information.
+                </p>
+            </section>
+
+            <section class="mb-5">
+                <h2 class="h3 mb-3">🚀 What We Do</h2>
+                <p>
+                    Gistify uses cutting-edge AI technology to automatically transcribe YouTube videos 
+                    and generate smart, structured notes. Whether you're watching educational content, 
+                    tutorials, or lectures, we turn hours of video into concise, actionable notes.
+                </p>
+            </section>
+
+            <section class="mb-5">
+                <h2 class="h3 mb-3">✨ Key Features</h2>
+                <ul class="list-unstyled">
+                    <li class="mb-2">✅ <strong>Automatic Transcription:</strong> Get accurate transcripts from any YouTube video</li>
+                    <li class="mb-2">✅ <strong>AI-Powered Summaries:</strong> Intelligent note generation with different styles</li>
+                    <li class="mb-2">✅ <strong>Timestamp Tracking:</strong> Jump to specific moments in videos</li>
+                    <li class="mb-2">✅ <strong>Save & Export:</strong> Keep your notes organized and export anytime</li>
+                    <li class="mb-2">✅ <strong>Secure & Private:</strong> Your data stays safe and confidential</li>
+                </ul>
+            </section>
+
+            <section class="mb-5">
+                <h2 class="h3 mb-3">🎯 Who We Serve</h2>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">🎓 Students</h5>
+                                <p class="card-text">Perfect for taking notes from lectures and educational content</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">💼 Professionals</h5>
+                                <p class="card-text">Quick summaries from tutorials and industry conferences</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">🌟 Content Creators</h5>
+                                <p class="card-text">Extract key insights and ideas from competitor content</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="text-center">
+                <a href="{{ url_for('hello') }}" class="button btn-lg">Get Started Free</a>
+            </section>
+        </div>
+    </div>
+</div>
+
+<style>
+    .lead {
+        font-size: 1.25rem;
+        font-weight: 300;
+        line-height: 1.6;
+    }
+    section {
+        padding: 20px 0;
+    }
+    .card {
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+

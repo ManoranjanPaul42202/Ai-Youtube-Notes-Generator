@@ -1,7 +1,8 @@
 import secrets
 import os
+import json
 from PIL import Image
-from flask import render_template, url_for, redirect, flash, request, jsonify, session
+from flask import render_template, url_for, redirect, flash, request, jsonify, session, Response, stream_with_context
 from gistify import app, db, bcrypt
 from gistify.form import RegistrationForm, loginForm, UpdateAccountForm, LinkForm, GenerateNotesForm
 from gistify.model import User, Note
@@ -25,32 +26,50 @@ def save_picture(form_picture):
 def get_or_create_note(url, user_id, title="YouTube Note", cookies_path=None):
     note = Note.query.filter_by(yt_link=url).first()
     if note:
+        # Safely load segments from JSON; fall back to eval for legacy rows,
+        # then normalize back to JSON in DB to prevent future issues
+        segments = []
+        try:
+            segments = json.loads(note.time_stamps) if note.time_stamps else []
+        except Exception:
+            try:
+                segments = eval(note.time_stamps) if note.time_stamps else []
+                # Normalize and resave as JSON for future reads
+                note.time_stamps = json.dumps(segments, ensure_ascii=False)
+                db.session.commit()
+            except Exception:
+                segments = []
+
         return {
             "transcription": note.content,
-            "segments": eval(note.time_stamps),
+            "segments": segments,
             "language": note.language,
             "cached": True
         }
 
     # Generate new transcription
-    result = generate_transcript(url, cookies_path=cookies_path)
+    result = generate_transcript(url, cookies_path=cookies_path, return_segments=True)
     if "error" in result:
         return result
 
     transcription_text = result.get("transcription", "")
     segments = result.get("segments", [])
     language = result.get("language", "unknown")
+    
+    print(f"[DEBUG] Transcription length: {len(transcription_text)} chars")
+    print(f"[DEBUG] Segments count: {len(segments)}")
 
     new_note = Note(
         title=title,
         yt_link=url,
         language=language,
-        time_stamps=str(segments),
+        time_stamps=json.dumps(segments, ensure_ascii=False),
         content=transcription_text,
         user_id=user_id
     )
     db.session.add(new_note)
     db.session.commit()
+    print(f"[DEBUG] Successfully saved note with {len(segments)} segments to DB")
 
     return {
         "transcription": transcription_text,
@@ -58,6 +77,17 @@ def get_or_create_note(url, user_id, title="YouTube Note", cookies_path=None):
         "language": language,
         "cached": False
     }
+
+@app.route("/saved_notes", methods=['GET'])
+@login_required
+def saved_notes():
+    notes = Note.query.filter_by(user_id=current_user.id).order_by(Note.id.desc()).all()
+    return render_template(
+        'saved_notes.html',
+        title='Saved Notes',
+        css='dashboard.css',
+        notes=notes
+    )
 
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/home", methods=['GET', 'POST'])
@@ -221,6 +251,35 @@ def generate_notes():
 
 
 
+@app.route("/generate_notes_stream")
+@login_required
+def generate_notes_stream():
+    url = session.get('link')
+    note = Note.query.filter_by(yt_link=url).first()
+    if note is None or not note.content:
+        return jsonify({"error": "No transcription found. Please generate transcription first."}), 400
+
+    transcript_text = note.content
+    style = current_user.preference
+
+    def event_stream():
+        try:
+            import json
+            generator = NotesGenerator()
+            for idx, total, chunk_notes in generator.stream_generate_notes(transcript_text, style=style):
+                payload = {
+                    "type": "chunk",
+                    "index": idx,
+                    "total": total,
+                    "notes": chunk_notes
+                }
+                yield "data: " + json.dumps(payload) + "\n\n"
+            yield "data: " + json.dumps({"type": "done"}) + "\n\n"
+        except Exception as e:
+            yield "data: " + json.dumps({"type": "error", "message": str(e)}) + "\n\n"
+
+    return Response(stream_with_context(event_stream()), mimetype='text/event-stream')
+
 @app.route("/logout")
 def logout():
     logout_user()
@@ -257,3 +316,19 @@ def account():
                          filename="images/profile_images/" + current_user.image_file)
     return render_template('account.html', title='Account', 
                            user_image = user_image, form=form, css='register.css')
+
+@app.route("/about")
+def about():
+    return render_template('about.html', title='About Us')
+
+@app.route("/terms")
+def terms():
+    return render_template('terms.html', title='Terms of Service')
+
+@app.route("/privacy")
+def privacy():
+    return render_template('privacy.html', title='Privacy Policy')
+
+@app.route("/contact")
+def contact():
+    return render_template('contact.html', title='Contact Us')

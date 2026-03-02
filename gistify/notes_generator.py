@@ -520,3 +520,19 @@ class NotesGenerator:
             all_notes.append(result.content.strip())
 
         return "\n\n".join(all_notes)
+    
+    def stream_generate_notes(self, transcript_text: str, style="detailed"):
+        """
+        Generator that yields notes per chunk as soon as they're generated.
+        Yields tuples: (chunk_index, total_chunks, chunk_notes)
+        """
+        chunks = self.split_transcript(transcript_text)
+        total = len(chunks)
+        for i, chunk in enumerate(chunks, start=1):
+            messages = [
+                SystemMessage(content=self.system_prompt),
+                HumanMessage(content=self.user_prompts[style].format(context=chunk.page_content))
+            ]
+            result = self.llm.invoke(messages)
+            chunk_notes = result.content.strip()
+            yield (i, total, chunk_notes)

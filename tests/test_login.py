@@ -124,10 +124,15 @@ def test_invalid_login(setup_server, driver):
 
     driver.find_element(By.NAME, "email").send_keys("wrong@gmail.com")
     driver.find_element(By.NAME, "password").send_keys("wrong123")
-    driver.find_element(By.NAME, "submit").click()
 
-    body_text = wait.until(
-        EC.presence_of_element_located((By.TAG_NAME, "body"))
+    submit_button = wait.until(
+        EC.element_to_be_clickable((By.NAME, "submit"))
+    )
+    submit_button.click()
+
+    # ✅ Wait for error message div instead of body
+    error_message = wait.until(
+        EC.presence_of_element_located((By.CLASS_NAME, "alert"))
     ).text
 
-    assert "Invalid credentials" in body_text
+    assert "Invalid credentials" in error_message

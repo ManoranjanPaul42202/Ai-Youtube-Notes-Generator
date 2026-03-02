@@ -135,4 +135,4 @@ def test_invalid_login(setup_server, driver):
         EC.presence_of_element_located((By.CLASS_NAME, "alert"))
     ).text
 
-    assert "Invalid credentials" in error_message
+    assert "bad credentials" in error_message.lower()

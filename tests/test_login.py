@@ -1,4 +1,7 @@
 import pytest
+import sys
+import subprocess
+import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -6,21 +9,16 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import subprocess
-import time
 
 
-# ---------- FIXTURE TO START FLASK SERVER ----------
 @pytest.fixture(scope="module")
 def setup_server():
-    # Start Flask app
-    process = subprocess.Popen(["python", "run.py"])
-    time.sleep(5)  # Wait for server to start
+    process = subprocess.Popen([sys.executable, "run.py"])
+    time.sleep(5)
     yield
     process.terminate()
 
 
-# ---------- FIXTURE TO CREATE DRIVER ----------
 @pytest.fixture
 def driver():
     options = Options()
@@ -30,12 +28,10 @@ def driver():
 
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
-    driver.maximize_window()
     yield driver
     driver.quit()
 
 
-# ---------- TEST: VALID LOGIN ----------
 def test_valid_login(setup_server, driver):
     driver.get("http://localhost:5000/login")
 
@@ -50,8 +46,7 @@ def test_valid_login(setup_server, driver):
     assert "/dashboard" in driver.current_url
 
 
-# ---------- TEST: INVALID LOGIN ----------
-def test_invalid_login(driver):
+def test_invalid_login(setup_server, driver):
     driver.get("http://localhost:5000/login")
 
     driver.find_element(By.NAME, "username").send_keys("wrong")

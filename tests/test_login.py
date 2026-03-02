@@ -39,7 +39,7 @@ def driver():
 def test_valid_login(setup_server, driver):
     driver.get("http://localhost:5000/login")
 
-    driver.find_element(By.NAME, "username").send_keys("admin")
+    driver.find_element(By.NAME, "username").send_keys("admin@gmail.com")
     driver.find_element(By.NAME, "password").send_keys("admin123")
     driver.find_element(By.XPATH, "//button[@type='submit']").click()
 

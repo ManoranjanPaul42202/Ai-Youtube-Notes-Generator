@@ -286,20 +286,165 @@
 
 #         return notes_text
 
+# import re
+# from langchain_community.vectorstores import FAISS
+# from langchain_core.messages import HumanMessage, SystemMessage
+# from langchain_ollama import ChatOllama, OllamaEmbeddings
+# from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+# class NotesGenerator:
+#     def __init__(self, base_url="http://localhost:11434") -> None:
+#         # System prompt to guide the LLM
+#         self.system_prompt = """You are an expert note taker. You receive a transcript of a YouTube video. 
+#         Your job is to generate well-structured, extremely detailed notes that capture all ideas clearly,
+#         including code snippets, explanations, and examples. Preserve all formatting for code blocks."""
+
+#         # User prompts for different note styles
+#         self.user_prompts = {
+#             "detailed": """
+#             You are an expert educator creating detailed study notes from a transcript. 
+#             For this chunk of the transcript:
+
+#             1. Include **all concepts, explanations, examples, and code snippets**.
+#             2. Preserve formatting for code blocks exactly.
+#             3. Explain code snippets line by line if applicable.
+#             4. Use headings, subheadings, bullets, or numbered lists for clarity.
+#             5. Include key takeaways for this chunk.
+#             6. Do **not summarize or skip content**; expand wherever possible.
+
+#             Transcript chunk:
+#             {context}
+#             """
+#         }
+
+#         # Embeddings and LLM setup
+#         self.embeddings = OllamaEmbeddings(
+#             model="nomic-embed-text",
+#             base_url=base_url
+#         )
+#         self.llm = ChatOllama(
+#             model="llama3.2:3b",
+#             temperature=0.5,
+#             top_k=50,
+#             top_p=0.8,
+#             seed=0,
+#             base_url=base_url
+#         )
+
+#     def split_transcript(self, transcript_text: str, chunk_size=5000, chunk_overlap=200):
+#         """
+#         Split transcript into fewer, larger chunks while preserving code blocks.
+#         """
+#         code_blocks = re.findall(r"```[\s\S]*?```", transcript_text)
+#         text_only = re.sub(r"```[\s\S]*?```", "\nCODEBLOCKPLACEHOLDER\n", transcript_text)
+
+#         splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+#         text_chunks = splitter.create_documents([text_only])
+
+#         final_chunks = []
+#         code_idx = 0
+#         for chunk in text_chunks:
+#             content = chunk.page_content
+#             while "CODEBLOCKPLACEHOLDER" in content and code_idx < len(code_blocks):
+#                 content = content.replace("CODEBLOCKPLACEHOLDER", code_blocks[code_idx], 1)
+#                 code_idx += 1
+#             final_chunks.append(chunk.__class__(page_content=content))
+
+#         print(f"Transcript split into {len(final_chunks)} larger chunks with code preserved.")
+#         return final_chunks
+
+#     def generate_notes_for_chunks(self, chunks, style="detailed"):
+#         """
+#         Generate notes for each chunk individually and merge them.
+#         """
+#         all_notes = []
+
+#         for i, chunk in enumerate(chunks, start=1):
+#             print(f"Generating notes for chunk {i}/{len(chunks)}...")
+#             messages = [
+#                 SystemMessage(content=self.system_prompt),
+#                 HumanMessage(content=self.user_prompts[style].format(context=chunk.page_content))
+#             ]
+#             result = self.llm.invoke(messages)
+#             chunk_notes = result.content.strip()
+#             all_notes.append(f"{chunk_notes}\n\n")
+
+#         # Merge all chunk notes into one
+#         merged_notes = "\n".join(all_notes)
+
+#         # Save to file
+#         filename = f"notes_{style}_merged.txt"
+#         with open(filename, "w", encoding="utf-8") as f:
+#             f.write(merged_notes)
+
+#         print(f"Merged {style} notes saved as {filename}.")
+#         return merged_notes
+
+#     def generate_notes(self, transcript_text: str, style="detailed"):
+#         """
+#         Main method: split transcript, generate notes per chunk, and merge.
+#         """
+#         chunks = self.split_transcript(transcript_text)
+#         merged_notes = self.generate_notes_for_chunks(chunks, style=style)
+#         return merged_notes
+
+#     def stream_generate_notes(self, transcript_text: str, style="detailed"):
+#         """
+#         Generator that yields notes per chunk as soon as they're generated.
+#         Yields tuples: (chunk_index, total_chunks, chunk_notes)
+#         """
+#         chunks = self.split_transcript(transcript_text)
+#         total = len(chunks)
+#         for i, chunk in enumerate(chunks, start=1):
+#             messages = [
+#                 SystemMessage(content=self.system_prompt),
+#                 HumanMessage(content=self.user_prompts[style].format(context=chunk.page_content))
+#             ]
+#             result = self.llm.invoke(messages)
+#             chunk_notes = result.content.strip()
+#             yield (i, total, chunk_notes)
+
 import re
-from langchain_community.vectorstores import FAISS
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_ollama import ChatOllama, OllamaEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+# ===== SAFE IMPORTS FOR CI =====
+try:
+    from langchain_community.vectorstores import FAISS
+except ImportError:
+    FAISS = None
+
+try:
+    from langchain_core.messages import HumanMessage, SystemMessage
+except ImportError:
+    HumanMessage = None
+    SystemMessage = None
+
+try:
+    from langchain_ollama import ChatOllama, OllamaEmbeddings
+except ImportError:
+    ChatOllama = None
+    OllamaEmbeddings = None
+
+try:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+except ImportError:
+    RecursiveCharacterTextSplitter = None
+
 
 class NotesGenerator:
     def __init__(self, base_url="http://localhost:11434") -> None:
-        # System prompt to guide the LLM
+
+        # If running in CI and AI packages not installed → disable safely
+        if not all([ChatOllama, OllamaEmbeddings, RecursiveCharacterTextSplitter]):
+            print("⚠️ AI dependencies not installed. NotesGenerator disabled (CI mode).")
+            self.ai_enabled = False
+            return
+        else:
+            self.ai_enabled = True
+
         self.system_prompt = """You are an expert note taker. You receive a transcript of a YouTube video. 
         Your job is to generate well-structured, extremely detailed notes that capture all ideas clearly,
         including code snippets, explanations, and examples. Preserve all formatting for code blocks."""
 
-        # User prompts for different note styles
         self.user_prompts = {
             "detailed": """
             You are an expert educator creating detailed study notes from a transcript. 
@@ -317,11 +462,11 @@ class NotesGenerator:
             """
         }
 
-        # Embeddings and LLM setup
         self.embeddings = OllamaEmbeddings(
             model="nomic-embed-text",
             base_url=base_url
         )
+
         self.llm = ChatOllama(
             model="llama3.2:3b",
             temperature=0.5,
@@ -332,13 +477,18 @@ class NotesGenerator:
         )
 
     def split_transcript(self, transcript_text: str, chunk_size=5000, chunk_overlap=200):
-        """
-        Split transcript into fewer, larger chunks while preserving code blocks.
-        """
+
+        if not self.ai_enabled:
+            raise RuntimeError("AI features not available in CI environment.")
+
         code_blocks = re.findall(r"```[\s\S]*?```", transcript_text)
         text_only = re.sub(r"```[\s\S]*?```", "\nCODEBLOCKPLACEHOLDER\n", transcript_text)
 
-        splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap
+        )
+
         text_chunks = splitter.create_documents([text_only])
 
         final_chunks = []
@@ -350,57 +500,23 @@ class NotesGenerator:
                 code_idx += 1
             final_chunks.append(chunk.__class__(page_content=content))
 
-        print(f"Transcript split into {len(final_chunks)} larger chunks with code preserved.")
         return final_chunks
 
-    def generate_notes_for_chunks(self, chunks, style="detailed"):
-        """
-        Generate notes for each chunk individually and merge them.
-        """
+    def generate_notes(self, transcript_text: str, style="detailed"):
+
+        if not self.ai_enabled:
+            raise RuntimeError("AI features not available in CI environment.")
+
+        chunks = self.split_transcript(transcript_text)
+
         all_notes = []
 
-        for i, chunk in enumerate(chunks, start=1):
-            print(f"Generating notes for chunk {i}/{len(chunks)}...")
+        for chunk in chunks:
             messages = [
                 SystemMessage(content=self.system_prompt),
                 HumanMessage(content=self.user_prompts[style].format(context=chunk.page_content))
             ]
             result = self.llm.invoke(messages)
-            chunk_notes = result.content.strip()
-            all_notes.append(f"{chunk_notes}\n\n")
+            all_notes.append(result.content.strip())
 
-        # Merge all chunk notes into one
-        merged_notes = "\n".join(all_notes)
-
-        # Save to file
-        filename = f"notes_{style}_merged.txt"
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(merged_notes)
-
-        print(f"Merged {style} notes saved as {filename}.")
-        return merged_notes
-
-    def generate_notes(self, transcript_text: str, style="detailed"):
-        """
-        Main method: split transcript, generate notes per chunk, and merge.
-        """
-        chunks = self.split_transcript(transcript_text)
-        merged_notes = self.generate_notes_for_chunks(chunks, style=style)
-        return merged_notes
-
-    def stream_generate_notes(self, transcript_text: str, style="detailed"):
-        """
-        Generator that yields notes per chunk as soon as they're generated.
-        Yields tuples: (chunk_index, total_chunks, chunk_notes)
-        """
-        chunks = self.split_transcript(transcript_text)
-        total = len(chunks)
-        for i, chunk in enumerate(chunks, start=1):
-            messages = [
-                SystemMessage(content=self.system_prompt),
-                HumanMessage(content=self.user_prompts[style].format(context=chunk.page_content))
-            ]
-            result = self.llm.invoke(messages)
-            chunk_notes = result.content.strip()
-            yield (i, total, chunk_notes)
-
+        return "\n\n".join(all_notes)

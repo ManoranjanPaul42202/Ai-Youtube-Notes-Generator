@@ -14,7 +14,7 @@ import time
 @pytest.fixture(scope="module")
 def setup_server():
     # Start Flask app
-    process = subprocess.Popen(["python", "app.py"])
+    process = subprocess.Popen(["python", "run.py"])
     time.sleep(5)  # Wait for server to start
     yield
     process.terminate()
